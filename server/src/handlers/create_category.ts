@@ -1,16 +1,23 @@
 
+import { db } from '../db';
+import { categoriesTable } from '../db/schema';
 import { type CreateCategoryInput, type Category } from '../schema';
 
-export async function createCategory(input: CreateCategoryInput): Promise<Category> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to create a new article category.
-    // Only super admins should be able to create categories.
-    return Promise.resolve({
-        id: 0,
+export const createCategory = async (input: CreateCategoryInput): Promise<Category> => {
+  try {
+    // Insert category record
+    const result = await db.insert(categoriesTable)
+      .values({
         name: input.name,
         slug: input.slug,
-        description: input.description || null,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Category);
-}
+        description: input.description || null
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Category creation failed:', error);
+    throw error;
+  }
+};

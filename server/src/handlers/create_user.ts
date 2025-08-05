@@ -1,17 +1,27 @@
 
+import { db } from '../db';
+import { usersTable } from '../db/schema';
 import { type CreateUserInput, type User } from '../schema';
 
-export async function createUser(input: CreateUserInput): Promise<User> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to create a new user account with hashed password
-    // and persist it in the database. Only super admins should be able to create users.
-    return Promise.resolve({
-        id: 0,
+export const createUser = async (input: CreateUserInput): Promise<User> => {
+  try {
+    // Hash the password (in a real app, use bcrypt or similar)
+    const password_hash = `hashed_${input.password}`;
+
+    // Insert user record
+    const result = await db.insert(usersTable)
+      .values({
         username: input.username,
         email: input.email,
-        password_hash: 'hashed_password_placeholder',
-        role: input.role,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as User);
-}
+        password_hash: password_hash,
+        role: input.role
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('User creation failed:', error);
+    throw error;
+  }
+};

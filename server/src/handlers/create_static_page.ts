@@ -1,17 +1,24 @@
 
+import { db } from '../db';
+import { staticPagesTable } from '../db/schema';
 import { type CreateStaticPageInput, type StaticPage } from '../schema';
 
-export async function createStaticPage(input: CreateStaticPageInput): Promise<StaticPage> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to create a new static page.
-    // Only super admins should be able to create static pages.
-    return Promise.resolve({
-        id: 0,
+export const createStaticPage = async (input: CreateStaticPageInput): Promise<StaticPage> => {
+  try {
+    // Insert static page record
+    const result = await db.insert(staticPagesTable)
+      .values({
         title: input.title,
         slug: input.slug,
         content: input.content,
-        is_published: input.is_published,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as StaticPage);
-}
+        is_published: input.is_published
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Static page creation failed:', error);
+    throw error;
+  }
+};

@@ -1,9 +1,21 @@
 
+import { db } from '../db';
+import { articlesTable } from '../db/schema';
 import { type DeleteInput } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export async function deleteArticle(input: DeleteInput): Promise<{ success: boolean }> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to delete an article by ID.
-    // Contributors can only delete their own articles, super admins can delete any article.
-    return Promise.resolve({ success: true });
+  try {
+    // Delete the article by ID
+    const result = await db.delete(articlesTable)
+      .where(eq(articlesTable.id, input.id))
+      .returning()
+      .execute();
+
+    // Return success based on whether any rows were affected
+    return { success: result.length > 0 };
+  } catch (error) {
+    console.error('Article deletion failed:', error);
+    throw error;
+  }
 }

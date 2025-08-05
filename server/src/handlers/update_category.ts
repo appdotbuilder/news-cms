@@ -1,16 +1,48 @@
 
+import { db } from '../db';
+import { categoriesTable } from '../db/schema';
 import { type UpdateCategoryInput, type Category } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function updateCategory(input: UpdateCategoryInput): Promise<Category> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to update a category by ID.
-    // Only super admins should be able to update categories.
-    return Promise.resolve({
-        id: input.id,
-        name: input.name || 'existing_name',
-        slug: input.slug || 'existing-slug',
-        description: input.description || null,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Category);
-}
+export const updateCategory = async (input: UpdateCategoryInput): Promise<Category> => {
+  try {
+    // Check if category exists
+    const existingCategory = await db.select()
+      .from(categoriesTable)
+      .where(eq(categoriesTable.id, input.id))
+      .execute();
+
+    if (existingCategory.length === 0) {
+      throw new Error(`Category with id ${input.id} not found`);
+    }
+
+    // Build update data object with only provided fields
+    const updateData: Partial<typeof categoriesTable.$inferInsert> = {
+      updated_at: new Date()
+    };
+
+    if (input.name !== undefined) {
+      updateData.name = input.name;
+    }
+
+    if (input.slug !== undefined) {
+      updateData.slug = input.slug;
+    }
+
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+
+    // Update category record
+    const result = await db.update(categoriesTable)
+      .set(updateData)
+      .where(eq(categoriesTable.id, input.id))
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Category update failed:', error);
+    throw error;
+  }
+};
